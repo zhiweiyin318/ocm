@@ -117,7 +117,7 @@ func (w *WorkService) HandleStatusUpdate(ctx context.Context, evt *cloudevents.E
 	}
 
 	klog.V(4).Infof("work %s/%s %s %s", last.Namespace, last.Name, eventType.SubResource, eventType.Action)
-
+	klog.V(4).Infof("### work %s/%s %v", last.Namespace, last.Name, work.Status.Conditions)
 	workPatcher := patcher.NewPatcher[
 		*workv1.ManifestWork, workv1.ManifestWorkSpec, workv1.ManifestWorkStatus](
 		w.workClient.WorkV1().ManifestWorks(clusterName))
@@ -126,6 +126,7 @@ func (w *WorkService) HandleStatusUpdate(ctx context.Context, evt *cloudevents.E
 	case types.UpdateRequestAction:
 		// the work was deleted by agent, remove its finalizers
 		if meta.IsStatusConditionTrue(work.Status.Conditions, common.ResourceDeleted) {
+			klog.V(4).Infof("### delete work %s/%s %s %s", last.Namespace, last.Name, eventType.SubResource, eventType.Action)
 			return workPatcher.RemoveFinalizer(ctx, last, common.ResourceFinalizer)
 		}
 
