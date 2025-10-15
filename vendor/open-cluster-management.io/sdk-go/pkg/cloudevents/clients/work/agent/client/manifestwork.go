@@ -223,10 +223,13 @@ func (c *ManifestWorkAgentClient) Patch(ctx context.Context, name string, pt kub
 		generic.IncreaseWorkProcessedCounter("patch", string(returnErr.ErrStatus.Reason))
 		return nil, returnErr
 	}
-
+	if !newWork.DeletionTimestamp.IsZero() {
+		fmt.Printf("-------> work deleting %s, %v\n", newWork.Name, newWork.Finalizers)
+	}
 	// the finalizers of a deleting manifestwork are removed, marking the manifestwork status to deleted and sending
 	// it back to source
 	if !newWork.DeletionTimestamp.IsZero() && len(newWork.Finalizers) == 0 {
+		fmt.Printf("------> publish work deleted %s\n", newWork.Name)
 		meta.SetStatusCondition(&newWork.Status.Conditions, metav1.Condition{
 			Type:    common.ResourceDeleted,
 			Status:  metav1.ConditionTrue,

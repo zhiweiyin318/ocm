@@ -344,6 +344,8 @@ func (n *klusterletController) sync(ctx context.Context, controllerContext facto
 	//       function need to be applied
 	var registrationFeatureMsgs, workFeatureMsgs string
 	var registrationFeatureGates []operatorapiv1.FeatureGate
+	fmt.Printf("--------> RegistrationConfiguration %v \n", klusterlet.Spec.RegistrationConfiguration)
+
 	if klusterlet.Spec.RegistrationConfiguration != nil {
 		registrationFeatureGates = klusterlet.Spec.RegistrationConfiguration.FeatureGates
 		config.ClientCertExpirationSeconds = klusterlet.Spec.RegistrationConfiguration.ClientCertExpirationSeconds
@@ -375,7 +377,7 @@ func (n *klusterletController) sync(ctx context.Context, controllerContext facto
 				AuthType: klusterlet.Spec.RegistrationConfiguration.RegistrationDriver.AuthType,
 			}
 		}
-
+		fmt.Printf("-------------> RegistrationDriver %v\n", config.RegistrationDriver)
 		// include clusterClaimConfig info if it exists
 		if klusterlet.Spec.RegistrationConfiguration.ClusterClaimConfiguration != nil {
 			config.MaxCustomClusterClaims = int(klusterlet.Spec.RegistrationConfiguration.ClusterClaimConfiguration.MaxCustomClusterClaims)
