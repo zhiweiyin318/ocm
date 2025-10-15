@@ -104,6 +104,7 @@ func NewAgentInformerWatcherStore() *AgentInformerWatcherStore {
 func (s *AgentInformerWatcherStore) HandleReceivedResource(action types.ResourceAction, work *workv1.ManifestWork) error {
 	switch action {
 	case types.Added:
+		fmt.Printf("-------> added work %v, Finalizer: %v\n", work.Name, work.Finalizers)
 		return s.Add(work.DeepCopy())
 	case types.Modified:
 		lastWork, exists, err := s.Get(work.Namespace, work.Name)
@@ -120,13 +121,13 @@ func (s *AgentInformerWatcherStore) HandleReceivedResource(action types.Resource
 		}
 
 		updatedWork := work.DeepCopy()
-
+		fmt.Printf("-------> modified work %v, updateWork.Finalizer:%v, lastWork.Fin: %v\n", updatedWork.Name, updatedWork.Finalizers, lastWork.Finalizers)
 		// restore the fields that are maintained by local agent
 		updatedWork.Labels = lastWork.Labels
 		updatedWork.Annotations = lastWork.Annotations
 		updatedWork.Finalizers = lastWork.Finalizers
 		updatedWork.Status = lastWork.Status
-
+		fmt.Printf("-------> modified work %v, updateWork.Finalizer:%v\n", updatedWork.Name, updatedWork.Finalizers)
 		return s.Update(updatedWork)
 	case types.Deleted:
 		// the manifestwork is deleting on the source, we just update its deletion timestamp.
@@ -142,6 +143,7 @@ func (s *AgentInformerWatcherStore) HandleReceivedResource(action types.Resource
 		updatedWork.Generation = work.Generation
 		updatedWork.ResourceVersion = work.ResourceVersion
 		updatedWork.DeletionTimestamp = work.DeletionTimestamp
+		fmt.Printf("------->deleted work %v, updateWork.Finalizer:%v\n", updatedWork.Name, updatedWork.Finalizers)
 		return s.Update(updatedWork)
 	default:
 		return fmt.Errorf("unsupported resource action %s", action)

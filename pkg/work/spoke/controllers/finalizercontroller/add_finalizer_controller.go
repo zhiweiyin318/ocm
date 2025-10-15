@@ -17,7 +17,7 @@ import (
 	"open-cluster-management.io/ocm/pkg/common/queue"
 )
 
-// AddFinalizerController is to add the cluster.open-cluster-management.io/manifest-work-cleanup finalizer to manifestworks.
+// AddFinalizerController is to add the git  finalizer to manifestworks.
 type AddFinalizerController struct {
 	patcher            patcher.Patcher[*workapiv1.ManifestWork, workapiv1.ManifestWorkSpec, workapiv1.ManifestWorkStatus]
 	manifestWorkLister worklister.ManifestWorkNamespaceLister
