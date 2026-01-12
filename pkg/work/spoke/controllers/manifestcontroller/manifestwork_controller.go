@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"k8s.io/apimachinery/pkg/util/rand"
+
 	"github.com/pkg/errors"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -144,7 +146,10 @@ func (m *ManifestWorkController) sync(ctx context.Context, controllerContext fac
 	if !manifestWork.DeletionTimestamp.IsZero() {
 		return nil
 	}
-
+	randomCnt := rand.String(5)
+	if manifestWork.Name == "w1" {
+		logger.Info("####### manifestwork controller ", "count", randomCnt, "name", manifestWork.Name, "generation", manifestWork.Generation)
+	}
 	// don't do work if the finalizer is not present
 	// it ensures all maintained resources will be cleaned once manifestwork is deleted
 	if !commonhelper.HasFinalizer(manifestWork.Finalizers, workapiv1.ManifestWorkFinalizer) {
@@ -170,6 +175,7 @@ func (m *ManifestWorkController) sync(ctx context.Context, controllerContext fac
 		manifestWork, newAppliedManifestWork, results, err = reconciler.reconcile(
 			ctx, controllerContext, manifestWork, newAppliedManifestWork, results)
 		var rqe commonhelper.RequeueError
+
 		if err != nil && errors.As(err, &rqe) {
 			if requeueTime > rqe.RequeueTime {
 				requeueTime = rqe.RequeueTime
@@ -177,14 +183,20 @@ func (m *ManifestWorkController) sync(ctx context.Context, controllerContext fac
 		} else if err != nil {
 			errs = append(errs, err)
 		}
+		if manifestWork.Name == "w1" {
+			logger.Info("####### manifestwork reconciler", "count", randomCnt, "name", manifestWork.Name, "generation", manifestWork.Generation, "errors", errs)
+		}
 	}
 
 	// Update work status
 	_, err = m.manifestWorkPatcher.PatchStatus(ctx, manifestWork, manifestWork.Status, oldManifestWork.Status)
 	if err != nil {
+		logger.Info("####### manifestwork patch status", "count", randomCnt, "name", manifestWork.Name, "generation", manifestWork.Generation, "error", err)
 		return err
 	}
-
+	if manifestWork.Name == "w1" {
+		logger.Info("####### manifestwork status", "count", randomCnt, "name", manifestWork.Name, "generation", manifestWork.Generation, "status", manifestWork.Status)
+	}
 	_, err = m.appliedManifestWorkPatcher.PatchStatus(
 		ctx, newAppliedManifestWork, newAppliedManifestWork.Status, appliedManifestWork.Status)
 	if err != nil {
@@ -263,6 +275,7 @@ func onUpdateFunc(queue workqueue.TypedRateLimitingInterface[string]) func(oldOb
 		}
 		if !apiequality.Semantic.DeepEqual(newWork.Spec, oldWork.Spec) ||
 			!apiequality.Semantic.DeepEqual(newWork.Labels, oldWork.Labels) {
+			queue.Forget(newWork.Name)
 			queue.Add(newWork.GetName())
 		}
 	}

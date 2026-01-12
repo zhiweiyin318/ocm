@@ -97,7 +97,9 @@ func (c *AvailableStatusController) sync(ctx context.Context, controllerContext 
 	// set tracing key from work if there is any
 	logger = logging.SetLogTracingByObject(logger, manifestWork)
 	ctx = klog.NewContext(ctx, logger)
-
+	if manifestWorkName == "w1" {
+		logger.Info("####### available status", "name", manifestWorkName, "generation", manifestWork.Generation)
+	}
 	err = c.syncManifestWork(ctx, manifestWork)
 	if err != nil {
 		return fmt.Errorf("unable to sync manifestwork %q: %w", manifestWork.Name, err)
@@ -162,7 +164,17 @@ func (c *AvailableStatusController) syncManifestWork(ctx context.Context, origin
 
 	// update status of manifestwork. if this conflicts, try again later
 	_, err := c.patcher.PatchStatus(ctx, manifestWork, manifestWork.Status, originalManifestWork.Status)
-	return err
+
+	if err != nil {
+		return err
+	}
+	logger := klog.FromContext(ctx).WithValues("manifestWorkName", manifestWork.Name)
+	ctx = klog.NewContext(ctx, logger)
+
+	if manifestWork.Name == "w1" {
+		logger.Info("####### available status", "name", manifestWork.Name, "generation", manifestWork.Generation, "status", manifestWork.Status)
+	}
+	return nil
 }
 
 func (c *AvailableStatusController) getFeedbackValues(
